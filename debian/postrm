@@ -5,22 +5,38 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-case "$1" in
-    purge)
+remove_action() {
+    # Activate trigger to rebuild workbench configuration files.
+    dpkg-trigger update-workbench
+    rm -f "/etc/systemd/system/smartarraycheck.service"
+}
 
+
+case "${1}" in
+    purge)
+        remove_action
+        # Remove the configuration data.
+        echo "Cleaning up configuration data..."
+        rm -f "/etc/smartarraycheck.d/config.yml"
+        [ -d "/etc/smartarraycheck.d" ] &&
+            rmdir --ignore-fail-on-non-empty "/etc/smartarraycheck.d"
+        echo "Cleaning up configuration database ..."
+        omv_config_delete "/config/services/smartarraycheck"
     ;;
 
     remove)
-
+        remove_action
     ;;
 
     upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
 
     *)
-        echo "postrm called with unknown argument \`$1'" >&2
+        echo "Postrm called with unknown argument '${1}'" >&2
         exit 1
     ;;
 esac
+
+#DEBHELPER#
 
 exit 0

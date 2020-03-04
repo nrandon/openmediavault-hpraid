@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+
+# Clean-up python cache.
+py3clean /opt/ssautils/ssalib
+
+#DEBHELPER#
+
+exit 0

@@ -1,3 +1,14 @@
+openmediavault-hpraid (6.0.0) stable; urgency=low
+
+  * Update for omv 6.x
+  * Move to new HPE Storage Controller Management (ssacli)
+  * Update 31-hwraid to better parse output
+  * Add a new e-mail notification that check array health
+  * Requires HPE MCP repository to be setup for Debian see:
+    https://downloads.linux.hpe.com/SDR/project/mcp/
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Wed, 27 Jul 2022 13:34:07 +0000
+
 openmediavault-hpraid (3.1) stable; urgency=low
 
   * Add missing file

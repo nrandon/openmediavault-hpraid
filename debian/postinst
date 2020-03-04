@@ -5,19 +5,34 @@ set -e
 . /etc/default/openmediavault
 . /usr/share/openmediavault/scripts/helper-functions
 
-case "$1" in
+case "${1}" in
     configure)
-        dpkg-trigger update-fixperms
-        dpkg-trigger update-locale
+        if [ -z "${2}" -a -e "/etc/systemd/system/smartarraycheck.service" ]; then
+            deb-systemd-helper disable smartarraycheck.service >/dev/null || :
+            deb-systemd-invoke stop smartarraycheck.service >/dev/null || :
+        fi
+
+        # Activate trigger to rebuild workbench configuration files.
+        dpkg-trigger update-workbench
+
+        # Initialize the configuration database.
+        echo "Updating configuration database ..."
+        omv-confdbadm create "conf.service.smartarraycheck"
+
+        # Deploy the configuration for smartarraycheck services.
+        echo "Deploying smartarraycheck configuration"
+        LANG=C.UTF-8 omv-salt deploy run --no-color --quiet smartarraycheck
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
     ;;
 
     *)
-        echo "postinst called with unknown argument" >&2
+        echo "Postinst called with unknown argument" >&2
         exit 1
     ;;
 esac
+
+#DEBHELPER#
 
 exit 0

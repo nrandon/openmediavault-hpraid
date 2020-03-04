@@ -1,0 +1,20 @@
+{{ pillar['headers']['auto_generated'] }}
+{{ pillar['headers']['warning'] }}
+[Unit]
+Description=Check Smart Array Status
+After=network-online.target postfix.service
+Wants=network-online.target postfix.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=3
+ExecStart=/opt/ssautils/smart-array-check \
+  --configfile "/etc/smartarraycheck.d/config.yml" \
+  --email-to "{{ email_config.primaryemail }}{{ (', ' + email_config.secondaryemail) if email_config.secondaryemail | length else ''}}" \
+  --email-from "{{ email_config.sender }}" \
+  --period {{ config.period }} \
+  --logpath "/var/log/smartarraycheck"
+
+[Install]
+WantedBy=multi-user.target

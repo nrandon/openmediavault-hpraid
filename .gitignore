@@ -41,3 +41,7 @@ debian/files
 debian/*.debhelper.log
 debian/*.debhelper
 debian/*substvars
+debian/debhelper-build-stamp
+
+# Smart array utils
+opt/ssautils/ssalib/__pycache__

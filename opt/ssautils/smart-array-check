@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+
+import argparse
+import gzip
+import logging
+import logging.handlers
+import os
+import shutil
+import smtplib
+import sys
+from email.message import EmailMessage
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from threading import Event, Thread
+
+from ssalib.ssa import Controllers, get_status_str
+
+
+logger = logging.getLogger(__name__)
+
+_CONFIGFILE = __file__+'.yml'
+
+
+def _logging_gzip_namer(name):
+    return name + ".gz"
+
+
+def _logging_gzip_rotator(source, dest):
+    with open(source, mode='rb') as s_file:
+        with gzip.open(dest, mode='wb') as d_file:
+            shutil.copyfileobj(s_file, d_file)
+    os.remove(source)
+
+
+def setup_logging(logpath=None):
+    app_name = Path(__file__).resolve().stem
+    r_logger = logging.getLogger()
+    r_logger.setLevel(logging.NOTSET)
+    r_logger.propagate = False
+
+    def_format_str = (
+        '[%(threadName)-10s] %(filename)-17s %(lineno)-3d '
+        '%(levelname)-7s %(message)s')
+
+    c_handler = logging.StreamHandler(sys.stderr)
+    c_format = logging.Formatter(fmt=def_format_str)
+    c_handler.setLevel(logging.INFO)
+    c_handler.setFormatter(c_format)
+    r_logger.addHandler(c_handler)
+
+    if logpath:
+        filename = f'{logpath}/{app_name}.log'
+        Path(logpath).mkdir(parents=True, exist_ok=True)
+        f_handler = RotatingFileHandler(
+            filename=filename, maxBytes=2000000,
+            backupCount=5, encoding='utf-8')
+        f_format = logging.Formatter(fmt='%(asctime)s ' + def_format_str)
+        f_handler.setFormatter(f_format)
+        f_handler.setLevel(logging.DEBUG)
+        f_handler.rotator = _logging_gzip_rotator
+        f_handler.namer = _logging_gzip_namer
+        r_logger.addHandler(f_handler)
+
+
+class ActionEnvValue(argparse.Action):
+    def __init__(self, env, **kwargs):
+        kwargs['default'] = os.environ.get(env, kwargs.get('default'))
+        if kwargs.get('required') and kwargs.get('default'):
+            kwargs['required'] = False
+        super().__init__(**kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+
+
+def parse_cmd_args(argv):
+    description = (
+        'Check a HPE Smart array for failures. '
+        'The return value are represented as follows: '
+        '0 - OK, 1 - Warning, 2 - Critical, 3 - Unknown')
+    epilog = (
+        'Note: To allow email to work SNMP must be configured and both '
+        "'--email-to' and '--email-from' must be set.")
+
+    parser = argparse.ArgumentParser(description=description, epilog=epilog)
+    parser.add_argument(
+        '-c', '--configfile', action=ActionEnvValue,
+        type=str, metavar='<config file>',
+        default=_CONFIGFILE, env='SA_CONFIGFILE',
+        help=('External values file or env SA_CONFIGFILE '
+              f'(default {_CONFIGFILE})'))
+    parser.add_argument(
+        '-t', '--email-to', action=ActionEnvValue,
+        type=str, metavar='<addresses>',
+        default=None, env='SA_MAIL_TO',
+        help=("Recipients e-mail addresses (', ' separated) or env SM_MAIL_TO "
+              '(default not set)'))
+    parser.add_argument(
+        '-f', '--email-from', action=ActionEnvValue,
+        type=str, metavar='<address>',
+        default=None, env='SA_MAIL_FROM',
+        help='Origin e-mail address or env SA_MAIL_FROM (default not set)')
+    parser.add_argument(
+        '-p', '--period', action=ActionEnvValue,
+        type=float, metavar='<seconds>',
+        default=900, env='SA_PERIOD',
+        help=('Time in seconds, between checks or env SA_PERIOD '
+              '(default 15 mins)'))
+    parser.add_argument(
+        '-o', '--output',
+        action='store_true',
+        default='SA_OUTPUT' in os.environ,
+        help=("If set output's check problems to stdout or env SA_OUTPUT "
+              '(default not set)'))
+    parser.add_argument(
+        '-l', '--logpath', action=ActionEnvValue,
+        type=str, metavar='<path>',
+        default=None, env='SA_LOGPATH',
+        help=("If set writes a logfile to the location or env SA_LOGPATH "
+              '(default not set)'))
+
+    args = parser.parse_args(argv[1:])
+
+    if ((args.email_from is None and args.email_to is not None) or
+            (args.email_from is not None and args.email_to is None)):
+        parser.print_help()
+        sys.exit(255)
+    return args
+
+
+def check_array(configfile, from_addr, to_addr, output):
+    status, description = Controllers(configFile=configfile).is_ok()
+    str_status = get_status_str(status)
+    if str_status != 'OK':
+        logger.info(f'Check output:\n{description}')
+        if output:
+            print(description)
+        if from_addr and to_addr:
+            sendmail(from_addr, to_addr, str_status, description)
+    else:
+        logger.debug(f'Check output: {description}')
+
+
+def sendmail(from_addr, to_addr, status, description):
+    msg = EmailMessage()
+    msg['Subject'] = (f'HPE Smart Array(s) Problem Detected: {status}')
+    msg.set_content(f'Smart Array(s) Description:\n\n{description}')
+
+    smtp = smtplib.SMTP('localhost')
+    smtp.sendmail(from_addr, to_addr, msg.as_string())
+    smtp.quit()
+
+
+class PeriodicTask(Thread):
+    def __init__(
+            self, target=None, name=None, daemon=False, period=None,
+            args=(), kwargs={}):
+        super().__init__(
+            group=None, target=target, name=name, daemon=daemon, args=args,
+            kwargs=kwargs)
+
+        self._period = period
+        self._event = Event()
+
+    def cancle(self):
+        self._event.set()
+        self.join()
+
+    def run(self):
+        while not self._event.is_set():
+            try:
+                logger.info(f'Executing function: {self._target.__name__}')
+                if self._target(*self._args, **self._kwargs):
+                    break
+            except Exception as exc:
+                logger.exception(f'Unexpected exception : {exc}')
+            finally:
+                logger.info(f'Complete function: {self._target.__name__}')
+                self._event.wait(timeout=self._period)
+        logger.info(f'Periodic task complete: {self._target.__name__}')
+
+
+def main():
+    args = parse_cmd_args(sys.argv)
+    setup_logging(args.logpath)
+    logger.debug(f'Input args: {args}')
+    task = PeriodicTask(
+        target=check_array,
+        args=(
+            args.configfile,
+            args.email_from,
+            args.email_to,
+            args.output),
+        period=args.period)
+    task.start()
+
+
+if __name__ == '__main__':
+    main()

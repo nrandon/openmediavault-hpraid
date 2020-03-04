@@ -1,0 +1,40 @@
+version: "1.0"
+type: component
+data:
+  name: omv-storage-smartarraycheck-settings-form-page
+  type: formPage
+  config:
+    request:
+      service: SmartArrayCheck
+      get:
+        method: getSettings
+      post:
+        method: setSettings
+    fields:
+      - type: checkbox
+        name: enable
+        label: _("Enable")
+        value: false
+        hint: _("OMV Notification must be set-up and enabled for this to work.")
+      - type: numberInput
+        name: period
+        label: _("Period")
+        value: 900
+        hint: _("Time in seconds, between checks.")
+        validators:
+          min: 1
+          max: 3600
+          patterType: integer
+          required: true
+      - type: codeEditor
+        language: yaml
+        name: controllers
+        label: _("Controller external YAML config values")
+        validators:
+          required: true
+    buttons:
+      - template: submit
+      - template: cancel
+        execute:
+          type: url
+          url: "/storage"

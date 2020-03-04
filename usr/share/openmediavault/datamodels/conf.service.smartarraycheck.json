@@ -1,0 +1,23 @@
+{
+	"type": "config",
+	"id": "conf.service.smartarraycheck",
+	"title": "Smart Array Check",
+	"queryinfo": {
+		"xpath": "//services/smartarraycheck",
+		"iterable": false
+	},
+	"properties": {
+		"enable": {
+			"type": "boolean",
+			"default": 0
+		},
+		"period": {
+			"type": "integer",
+			"default": 900
+		},
+		"controllers": {
+			"type": "string",
+			"default": ""
+		}
+	}
+}

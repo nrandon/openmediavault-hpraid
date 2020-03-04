@@ -1,8 +1,9 @@
-/**
+<?php
+/*
  * @author    Volker Theile <volker.theile@openmediavault.org>
  * @author    OpenMediaVault Plugin Developers <plugins@omv-extras.org>
  * @copyright Copyright (c) 2009-2013 Volker Theile
- * @copyright Copyright (c) 2014-2016 OpenMediaVault Plugin Developers
+ * @copyright Copyright (c) 2014-2022 OpenMediaVault Plugin Developers
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +18,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-// require("js/omv/WorkspaceManager.js")
 
-OMV.WorkspaceManager.registerNode({
-    id      : "hpraid",
-    path    : "/storage",
-    text    : _("HP Raid"),
-    icon16  : "images/raid.png",
-    iconSvg : "images/raid.svg"
-});
+class OMVRpcServiceSmartArrayDetails extends \OMV\Rpc\ServiceAbstract
+{
+    public function getName()
+    {
+        return 'SmartArrayDetails';
+    }
+
+    public function initialize()
+    {
+        $this->registerMethod('getDetails');
+    }
+
+    public function getDetails($params, $context)
+    {
+        // Validate the RPC caller context.
+        $this->validateMethodContext($context, ["role" => OMV_ROLE_ADMINISTRATOR]);
+        // Get task overview.
+        $cmd = new \OMV\System\Process("omv-sysinfo", "31-hpraid");
+        $cmd->setRedirect2to1();
+        $cmd->execute($output);
+        return implode("\n", $output);
+    }
+}

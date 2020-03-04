@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "storage.smartarraycheck.settings"
+  text: _("Notification Settings")
+  position: 10
+  icon: "tune"
+  url: "/storage/smartarraycheck/settings"

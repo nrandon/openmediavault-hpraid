@@ -1,0 +1,21 @@
+{
+	"type": "rpc",
+	"id": "rpc.smartarraycheck.settings",
+	"params": {
+		"type": "object",
+		"properties": {
+			"enable": {
+				"type": "boolean",
+				"required": true
+			},
+			"period": {
+				"type": "integer",
+				"required": true
+			},
+			"controllers": {
+				"type": "string",
+				"required": true
+			}
+		}
+	}
+}

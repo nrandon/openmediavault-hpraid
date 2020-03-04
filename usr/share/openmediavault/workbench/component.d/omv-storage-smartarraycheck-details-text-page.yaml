@@ -1,0 +1,12 @@
+version: "1.0"
+type: component
+data:
+  name: omv-storage-smartarraycheck-details-text-page
+  type: textPage
+  config:
+    autoReload: false
+    hasReloadButton: true
+    request:
+      service: SmartArrayDetails
+      get:
+        method: getDetails

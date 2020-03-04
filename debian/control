@@ -1,14 +1,19 @@
 Source: openmediavault-hpraid
-Section: net
+Section: misc
 XB-Plugin-Section: utilities
 Priority: optional
 Maintainer: OpenMediaVault Plugin Developers <plugins@omv-extras.org>
-Build-Depends: debhelper (>= 9.0.0)
-Standards-Version: 3.9.3
-Homepage: http://omv-extras.org/simple/
+Build-Depends: debhelper (>= 12)
+Standards-Version: 4.3.0
+Homepage: http://omv-extras.org
 
 Package: openmediavault-hpraid
 Architecture: all
-Depends: openmediavault (>= 3.0.25), hpacucli
+Depends: openmediavault (>= 6.0.30),
+         ssacli,
+         python3,
+         python3-yaml,
+         ${misc:Depends}
+Priority: optional
 Description: HPRaid plugin for OpenMediaVault.
- Plugin to view information about HP hardware raid.
+ Plugin to view information about HPE hardware raid.

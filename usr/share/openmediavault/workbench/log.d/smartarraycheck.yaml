@@ -1,0 +1,28 @@
+version: "1.0"
+type: log
+data:
+  id: smartarraycheck
+  text: _("Smart Array Check")
+  columns:
+  - name: _("Date & Time")
+    sortable: true
+    prop: date
+    cellTemplateName: localeDateTime
+    flexGrow: 1
+  - name: _("Thread")
+    sortable: true
+    prop: "threadName"
+    flexGrow: 1
+  - name: _("Type")
+    sortable: true
+    prop: "levelName"
+    flexGrow: 1
+  - name: _("Message")
+    sortable: true
+    prop: "message"
+    flexGrow: 1
+  request:
+    service: LogFile
+    method: getList
+    params:
+      id: smartarraycheck
