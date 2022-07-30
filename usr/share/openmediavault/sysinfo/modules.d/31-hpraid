@@ -2,7 +2,7 @@
 #
 # @license   http://www.gnu.org/licenses/gpl.html GPL Version 3
 # @author    OpenMediaVault Plugin Developers
-# @copyright Copyright (c) 2014-2015 OpenMediaVault Plugin Developers
+# @copyright Copyright (c) 2014-2022 OpenMediaVault Plugin Developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,59 +19,54 @@
 
 set -euo pipefail
 
-source /usr/share/openmediavault/sysinfo/functions
-
-HWRAID_BIN="/usr/sbin/ssacli"
+readonly HWRAID_BIN="/usr/sbin/ssacli"
 [ ! -f "${HWRAID_BIN}" ] && exit 0
 
-HWRAID_VERSION_INFO="$(LC_ALL=C
-    "${HWRAID_BIN}" version |
-    sed -n '/'''"$(\
-            basename "${HWRAID_BIN^^}" \
-            )"''' Version:/ s/^ *\(.*: \+.*\) \+.*/\1/p')"
+source /usr/share/openmediavault/sysinfo/functions
 
 omv_sysinfo_begin_msg \
-    "HPE Smart Array Information (${HWRAID_VERSION_INFO})"
+    "HPE Smart Array Information ($(LC_ALL=C
+        "${HWRAID_BIN}" version |
+         sed -n '/'''"$(\
+                 basename "${HWRAID_BIN^^}" \
+                 )"''' Version:/ s/^ *\(.*: \+.*\) \+.*/\1/p'))"
 
-DETECT_CONTROLLERS="$(LC_ALL=C
+readonly DETECT_CONTROLLERS="$(LC_ALL=C
     "${HWRAID_BIN}" ctrl all show 2>&1 |
     sed '/^$/d' || true)"
-[[ "${DETECT_CONTROLLERS}" =~ 'No controllers detected' ]] && {
+[[ "${DETECT_CONTROLLERS}" =~ (No controllers detected)\. ]] && {
     omv_sysinfo_msg ""
-    sed 's/Error: //' <<< "${DETECT_CONTROLLERS}"
+    sed 's:^\s\+:   :g;s/^Error: //' <<< "${DETECT_CONTROLLERS}"
     omv_sysinfo_end_msg
     exit 0
 }
 
-SLOTLIST="$(sed -n 's/^.*Slot \([1-9]\+[0-9]*\).*/\1/p' <<<\
-                 "${DETECT_CONTROLLERS}")"
-for SLOTNR in ${SLOTLIST}; do
+_hwraid_msg() {
+    omv_sysinfo_msg ""
+    omv_sysinfo_msg "${1}: ${2%%$'\n'*}"
+    omv_sysinfo_msg_separator
+    # shellcheck disable=SC2001
+    sed 's:^   ::' <<< "${2#*$'\n'}"
+}
 
-    CONTROLLER_STATUS="$(LC_ALL=C
+while read -r SLOTNR; do
+    _hwraid_msg "CONTROLLER STATUS" "$(LC_ALL=C
         "${HWRAID_BIN}" ctrl slot="${SLOTNR}" show status |
         sed '/^$/d')"
-    CONTROLLER_CONFIGURATION="$(LC_ALL=C
+    _hwraid_msg "CONTROLLER CONFIGURATION" "$(LC_ALL=C
         "${HWRAID_BIN}" ctrl slot="${SLOTNR}" show config |
         sed '/^$/d;
              s/\(^.*Slot [1-9]\+[0-9]*\).*/\1/;
              s/\(.*\)\(logical\)\(drive\)/\1\u\2 \u\3:/;
              s/\(.*\)\(physical\)\(drive\)/\1\u\2 \u\3:/')"
-    CONTROLLER_DETAIL="$(LC_ALL=C
+    _hwraid_msg "CONTROLLER DETAILS" "$(LC_ALL=C
         "${HWRAID_BIN}" ctrl slot="${SLOTNR}" show detail |
         sed '/^ *Slot:\|^$/d')"
-    PHYSICAL_DRIVE_DETAIL="$(LC_ALL=C
+    _hwraid_msg "PHYSICAL DRIVE DETAILS" "$(LC_ALL=C
         "${HWRAID_BIN}" ctrl slot="${SLOTNR}" pd all show detail |
         sed '/^ *\(Port\|Box\|Bay\).*\|^$/d;
              s/\(.*\)\(physical\)\(drive\)/\1\u\2 \u\3:/')"
-
-     for INFO in "CONTROLLER_STATUS" "CONTROLLER_CONFIGURATION" \
-                 "CONTROLLER_DETAIL" "PHYSICAL_DRIVE_DETAIL"; do
-        omv_sysinfo_msg ""
-        omv_sysinfo_msg "${INFO//_/ }: $(sed -n '1p' <<< "${!INFO}")"
-        omv_sysinfo_msg_separator
-        sed -n '2,$s:^   ::p' <<< "${!INFO}"
-    done
-done
-
+done < <(sed -n 's/^.*Slot \([1-9]\+[0-9]*\).*/\1/p' <<< \
+            "${DETECT_CONTROLLERS}")
 omv_sysinfo_end_msg
 exit 0
