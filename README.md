@@ -1,65 +1,68 @@
 openmediavault-hpraid
 =====================
 
-HPE Smart Array Information plugin.
-
-Before installing this plugin the HPE MCP repository needs to be setup for
-Debian using the instructions here:
+Plugin Prerequisites:
+---------------------
+Before installing this plugin the HPE MCP apt repository must be setup
+following the instructions given here:
 https://downloads.linux.hpe.com/SDR/project/mcp/
 
-This plugin splits into two parts:
 
-The first part of the plugin, 'Array Details', offers a helper script
-'31-hpraid' which is placed in '/usr/share/openmediavault/sysinfo/modules.d'
-which supplies information on the current status of any installed Smart Array
-Controller compatible with the HPE 'ssacli' command. The script output can be
-obtained for OMV GUI from 'Storage->HPE Smart Array->Array Details' and it's
-output is included in the OMV GUI 'Diagnostics->Reports'.
+The HPE Smart Array plugin is splits into two parts:
 
-The second part of the plugin, 'Notification Settings', adds a notification
-e-mail if a fault is found on the Smart Array Controller, any of it peripherals
-(cache cards, capacitors or battery's) or any of the defined physical/logical
-volumes. To enable the e-mail notification the OMV e-mail notification must be
-configured and enabled in 'System->Notification->Settings', as the HPE Smart
-Array Notification will inherit these e-mail settings. If the OMV Notification
-is not enabled the 'Notification Setting' will keep disabling even if enable is
-selected.
+Array Details:
+--------------
+This executes a helper script __'31-hpraid'__ that is placed in
+__'/usr/share/openmediavault/sysinfo/modules.d'__ which supplies information
+on the current status of any installed Smart Array Controller compatible with
+the HPE __'ssacli'__ command. The script output is obtained from OMV GUI
+__'Storage->HPE Smart Array->Array Details'__ and it is also included
+in the OMV GUI __'Diagnostics->Reports'__.
 
-On 'Notification Settings' page the user must select how often to query the
-defined controller cards, the default every 15 minutes (900 seconds). Finally
-the controller and peripheral maximum operating temperatures must be specified
-using the YAML input editor, an empty template is supplied by default and is as
-follows:
+Notification Settings:
+----------------------
+This configures a notification e-mail that is sent if a problem is found with
+the Smart Array Controller, any of it peripherals (cache cards, capacitors or
+battery's) or any of the defined physical/logical volumes.
+
+To enable the e-mail notification the OMV e-mail __'Notification'__ must be
+configured and enabled in __'System->Notification->Settings'__, as the HPE
+Smart Array Notification will inherit these e-mail settings. If the OMV
+Notifications is not enabled the __'Notification Setting'__ will keep disabling
+even if enable is selected.
+
+On the __'Notification Settings'__ page the user must define how often to query
+the controller cards, the default is every 900 seconds (15 minuets). The user
+must also specify the maximum operating temperatures of the controller(s) and
+there peripheral using the YAML editor (usually the specifications are
+available from HPE web-site). An empty template to help is supplied on
+installation:
 ```
 <Controller type>:
   Cache Module Maximum Temperature (C): <int>
   Capacitor Maximum Temperature (C): <int>
   Controller Maximum Temperature (C): <int>
 ```
-To fill in this template the specification for the controller(s) (the
-controller(s) name can be obtained from the 'Array Details' page) and its
-peripheral must be check and the max operating temperature specified (these are
-usually available on-line from HPE web-site about the controller
-cards/peripherals). For example, the configuration for a p420 controller with a
-cache card and capacitor backup could be:
+For example, a configuration for a p420 controller(s) with a cache card(s) with
+capacitor backup could be:
 ```
 Smart Array P420:
   Cache Module Maximum Temperature (C): 55
   Capacitor Maximum Temperature (C): 60
   Controller Maximum Temperature (C): 100
 ```
-Alternatively for a P410 with a battery backup the configuration could be:
+Alternatively for a P410 controller(s) with battery cache backup the
+configuration could be:
 ```
 Smart Array P410:
   Cache Module Maximum Temperature (C): 55
   Battery Maximum Temperature (C): 85
   Controller Maximum Temperature (C): 55
 ```
-Note: The above value are examples and should be validated again the hardware
-being used.
-
-An example of a notification e-mail that could be send in the event of a
-problem being detected on a controller card is as follows:
+Note the above value are examples and should be validated against the hardware
+being used. Drive temperature are not required as these can be read directly
+from the drive firmware. An example of a notification e-mail that could be send
+in the event of a problem being detected on a controller card is as follows:
 ```
 [omvsys.local] HPE Smart Array(s) Problem Detected: Warning
 
