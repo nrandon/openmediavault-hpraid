@@ -1,7 +1,7 @@
 version: "1.0"
 type: component
 data:
-  name: omv-storage-smartarraycheck-details-text-page
+  name: omv-storage-hpesmartarray-details-text-page
   type: textPage
   config:
     autoReload: false

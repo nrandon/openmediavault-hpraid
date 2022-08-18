@@ -1,7 +1,7 @@
 version: "1.0"
 type: component
 data:
-  name: omv-storage-smartarraycheck-settings-form-page
+  name: omv-storage-hpesmartarray-settings-form-page
   type: formPage
   config:
     request:

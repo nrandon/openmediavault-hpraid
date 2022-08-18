@@ -1,0 +1,6 @@
+version: "1.0"
+type: route
+data:
+  url: "/storage/hpesmartarray"
+  title: _("HPE Smart Array")
+  component: omv-storage-hpesmartarray-navigation-page

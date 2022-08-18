@@ -1,3 +1,9 @@
+openmediavault-hpraid (6.0.2) stable; urgency=low
+
+  * Move from using smartarraycheck to hpesmartarray 
+
+ -- OpenMediaVault Plugin Developers <plugins@omv-extras.org>  Thu, 18 Aug 2022 12:19:12 +0100
+
 openmediavault-hpraid (6.0.1) stable; urgency=low
 
   * Clean-up 31-hpraid using shellcheck

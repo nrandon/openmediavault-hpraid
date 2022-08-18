@@ -1,7 +1,7 @@
 version: "1.0"
 type: route
 data:
-  url: "/storage/smartarraycheck/details"
+  url: "/storage/hpesmartarray/details"
   title: _("Array Details")
   notificationTitle: _('Array Details.')
-  component: omv-storage-smartarraycheck-details-text-page
+  component: omv-storage-hpesmartarray-details-text-page

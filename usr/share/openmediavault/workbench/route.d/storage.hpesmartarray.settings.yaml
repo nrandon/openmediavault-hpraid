@@ -1,8 +1,8 @@
 version: "1.0"
 type: route
 data:
-  url: "/storage/smartarraycheck/settings"
+  url: "/storage/hpesmartarray/settings"
   title: _("Notification Settings")
   editing: true
   notificationTitle: _('Updated Smart Array Check settings.')
-  component: omv-storage-smartarraycheck-settings-form-page
+  component: omv-storage-hpesmartarray-settings-form-page

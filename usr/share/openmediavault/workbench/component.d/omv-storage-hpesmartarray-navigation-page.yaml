@@ -1,5 +1,5 @@
 version: "1.0"
 type: component
 data:
-  name: omv-storage-smartarraycheck-navigation-page
+  name: omv-storage-hpesmartarray-navigation-page
   type: navigationPage

@@ -1,8 +1,8 @@
 version: "1.0"
 type: navigation-item
 data:
-  path: "storage.smartarraycheck"
+  path: "storage.hpesmartarray"
   position: 25
   text: _("HPE Smart Array")
   icon: "mdi:database"
-  url: "/storage/smartarraycheck"
+  url: "/storage/hpesmartarray"
